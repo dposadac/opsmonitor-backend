@@ -1,7 +1,7 @@
 /**
  * Value object encapsulating the allowed severities for an event.
  */
-export const EVENT_SEVERITIES = ['info', 'warning', 'error', 'critical'] as const;
+export const EVENT_SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
 
 export type EventSeverityValue = (typeof EVENT_SEVERITIES)[number];
 
@@ -16,6 +16,6 @@ export class EventSeverity {
   }
 
   isCritical(): boolean {
-    return this.value === 'critical' || this.value === 'error';
+    return this.value === 'critical';
   }
 }

@@ -1,28 +1,29 @@
-import { DataSource } from 'typeorm';
-import { EventOrmEntity } from '../entities/typeorm/event.orm-entity';
+import { Connection } from 'mongoose';
+import { EventSchema, EVENT_MODEL_NAME, EventSchemaClass } from '../entities/mongoose/event.schema';
+import { EventSeverity } from 'apps/events/src/domain/value-objects/event-severity.vo';
 
 /**
- * Initial data population / test fixtures for the events table.
+ * Initial data population / test fixtures for the events collection (MongoDB via Mongoose).
  */
-export async function seedEvents(dataSource: DataSource): Promise<void> {
-  const repo = dataSource.getRepository(EventOrmEntity);
-  const count = await repo.count();
+export async function seedEvents(connection: Connection): Promise<void> {
+  
+  const model = connection.models[EVENT_MODEL_NAME]
+    ?? connection.model<EventSchemaClass>(EVENT_MODEL_NAME, EventSchema);
+
+  const count = await model.countDocuments();
   if (count > 0) {
     return;
   }
 
-  await repo.save([
-    repo.create({
-      source: 'api-gateway',
-      type: 'http.5xx',
-      severity: 'error',
-      payload: { statusCode: 503, path: '/orders' },
-    }),
-    repo.create({
-      source: 'worker',
-      type: 'job.failed',
-      severity: 'warning',
-      payload: { jobId: 'reindex-42' },
-    }),
+  await model.create([
+    {
+      traceId: 'trace-0001',
+      originApplication: 'App1',
+      eventType: 'test',
+      description: 'test1',
+      severity: EventSeverity.of('critical').value,
+      occurredDateAt: new Date(),
+      metadata: {}
+    }
   ]);
 }

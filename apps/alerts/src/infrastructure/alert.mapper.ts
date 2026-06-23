@@ -1,35 +1,30 @@
-import { AlertRedisEntity } from '@app/repository';
-import { Alert, AlertChannel, AlertStatus } from '../domain/alert.entity';
+import { AlertDocument } from '@app/repository';
+import { Alert, AlertProcessingStatus } from '../domain/alert.entity';
 
 /**
- * Translates between the Alert aggregate and the Redis persistence record.
+ * Translates between the Alert aggregate and the Mongoose document.
  */
 export class AlertMapper {
-  static toDomain(record: AlertRedisEntity): Alert {
+  static toDomain(doc: AlertDocument | Record<string, any>): Alert {
     return new Alert({
-      id: record.id,
-      incidentId: record.incidentId,
-      channel: record.channel as AlertChannel,
-      message: record.message,
-      status: record.status as AlertStatus,
-      createdAt: new Date(record.createdAt),
-      sentAt: record.sentAt ? new Date(record.sentAt) : undefined,
+      id: doc._id?.toString(),
+      originEvent: doc.originEvent,
+      affectedApplication: doc.affectedApplication,
+      severity: doc.severity,
+      generatedAt: doc.generatedAt,
+      processingStatus: doc.processingStatus as AlertProcessingStatus,
     });
   }
 
-  static toPersistence(alert: AlertRedisEntity | Alert): AlertRedisEntity {
-    return {
-      id: alert.id as string,
-      incidentId: alert.incidentId,
-      channel: alert.channel,
-      message: alert.message,
-      status: alert.status,
-      createdAt:
-        alert.createdAt instanceof Date
-          ? alert.createdAt.toISOString()
-          : alert.createdAt,
-      sentAt:
-        alert.sentAt instanceof Date ? alert.sentAt.toISOString() : alert.sentAt,
-    };
+  static toPersistence(alert: Partial<Alert>): Record<string, unknown> {
+    const doc: Record<string, unknown> = {};
+    if (alert.originEvent !== undefined) doc.originEvent = alert.originEvent;
+    if (alert.affectedApplication !== undefined)
+      doc.affectedApplication = alert.affectedApplication;
+    if (alert.severity !== undefined) doc.severity = alert.severity;
+    if (alert.generatedAt !== undefined) doc.generatedAt = alert.generatedAt;
+    if (alert.processingStatus !== undefined)
+      doc.processingStatus = alert.processingStatus;
+    return doc;
   }
 }

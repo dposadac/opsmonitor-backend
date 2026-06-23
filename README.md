@@ -4,6 +4,10 @@ Monorepo NestJS con tres aplicaciones independientes, cada una siguiendo
 **DDD** (Domain-Driven Design) con repositorios personalizados, y una librería
 compartida `@app/repository` que centraliza la capa de acceso a datos.
 
+
+# Arquitectura - Diagrama
+![alt text](<Arquitectura_OpsMonitor - Reto coordinadora-01_DiagramaArquitectura-1.jpg>)
+
 ## Apps
 
 | App         | Puerto | Persistencia        | Bounded context                  |
@@ -30,12 +34,12 @@ apps/
 libs/
   repository/          # Data Access Layer compartido
     src/
-      base/            # Repositorios abstractos (TypeORM / Mongoose / Redis)
+      base/            # Repositorios abstractos (TypeORM / Mongoose)
       entities/        # Modelos ORM (TypeORM), schemas (Mongoose), records (Redis)
       query-builders/  # Construcción de queries complejas / optimizadas
       connection/      # Configuración y pooling de conexiones
       transaction/     # Gestión de transacciones y rollback
-      cache/           # Capa de caché con Redis
+      cache/           # Capa de caché (cache-manager sobre Redis vía Keyv)
       schema/          # Runner que ejecuta los scripts SQL de esquema
       seeding/         # Población inicial / fixtures
     db/

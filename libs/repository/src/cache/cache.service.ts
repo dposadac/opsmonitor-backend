@@ -1,48 +1,40 @@
 import { Inject, Injectable } from '@nestjs/common';
-import Redis from 'ioredis';
-import { REDIS_CLIENT } from '../connection/redis.provider';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 /**
- * Redis-backed caching layer for query result caching.
- * Used by repositories/services to memoize expensive reads.
+ * Capa de caché para memoizar lecturas costosas.
+ * Delegada en cache-manager (respaldado por Redis vía Keyv); los TTL se exponen
+ * en segundos hacia los consumidores y se convierten a milisegundos internamente.
  */
 @Injectable()
 export class CacheService {
-  private readonly defaultTtl = 60; // seconds
+  private readonly defaultTtlMs = 60_000; // 60s
 
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
   async get<T>(key: string): Promise<T | null> {
-    const raw = await this.redis.get(key);
-    return raw ? (JSON.parse(raw) as T) : null;
+    return (await this.cache.get<T>(key)) ?? null;
   }
 
-  async set<T>(key: string, value: T, ttlSeconds = this.defaultTtl): Promise<void> {
-    await this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+  async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+    await this.cache.set(key, value, this.toMs(ttlSeconds));
   }
 
   async del(key: string): Promise<void> {
-    await this.redis.del(key);
+    await this.cache.del(key);
   }
 
   /** Get-or-load helper: returns cached value or computes, caches, and returns it. */
   async wrap<T>(
     key: string,
     loader: () => Promise<T>,
-    ttlSeconds = this.defaultTtl,
+    ttlSeconds?: number,
   ): Promise<T> {
-    const cached = await this.get<T>(key);
-    if (cached !== null) return cached;
-    const fresh = await loader();
-    await this.set(key, fresh, ttlSeconds);
-    return fresh;
+    return this.cache.wrap(key, loader, this.toMs(ttlSeconds));
   }
 
-  /** Invalidate every key matching a glob pattern (e.g. "events:list:*"). */
-  async invalidatePattern(pattern: string): Promise<void> {
-    const keys = await this.redis.keys(pattern);
-    if (keys.length > 0) {
-      await this.redis.del(...keys);
-    }
+  private toMs(ttlSeconds?: number): number {
+    return ttlSeconds ? ttlSeconds * 1000 : this.defaultTtlMs;
   }
 }

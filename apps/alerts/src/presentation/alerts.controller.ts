@@ -1,43 +1,47 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   Param,
-  Patch,
-  Post,
 } from '@nestjs/common';
+import {
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AlertsService } from '../application/alerts.service';
-import { CreateAlertDto } from './dto/create-alert.dto';
+import { AlertResponseDto } from './dto/alert-response.dto';
 
+@ApiTags('alerts')
 @Controller('alerts')
 export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
 
-  @Post()
-  create(@Body() dto: CreateAlertDto) {
-    return this.alertsService.dispatch(dto);
-  }
-
   @Get()
-  list() {
-    return this.alertsService.list();
+  @ApiOperation({ summary: 'Listar alertas generadas desde la cola' })
+  @ApiOkResponse({ type: AlertResponseDto, isArray: true })
+  async list(): Promise<AlertResponseDto[]> {
+    const alerts = await this.alertsService.list();
+    return alerts.map(AlertResponseDto.fromDomain);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.alertsService.getById(id);
-  }
-
-  @Patch(':id/acknowledge')
-  acknowledge(@Param('id') id: string) {
-    return this.alertsService.acknowledge(id);
+  @ApiOperation({ summary: 'Obtener una alerta por id' })
+  @ApiOkResponse({ type: AlertResponseDto })
+  @ApiNotFoundResponse({ description: 'Alerta no encontrada' })
+  async findOne(@Param('id') id: string): Promise<AlertResponseDto> {
+    return AlertResponseDto.fromDomain(await this.alertsService.getById(id));
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Eliminar una alerta' })
+  @ApiNoContentResponse()
+  @ApiNotFoundResponse({ description: 'Alerta no encontrada' })
+  async remove(@Param('id') id: string): Promise<void> {
     await this.alertsService.remove(id);
   }
 }

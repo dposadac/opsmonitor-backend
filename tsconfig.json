@@ -21,7 +21,9 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@app/repository": ["libs/repository/src"],
-      "@app/repository/*": ["libs/repository/src/*"]
+      "@app/repository/*": ["libs/repository/src/*"],
+      "@app/shared": ["libs/shared/src"],
+      "@app/shared/*": ["libs/shared/src/*"]
     }
   }
 }

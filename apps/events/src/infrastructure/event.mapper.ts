@@ -1,29 +1,30 @@
-import { EventOrmEntity } from '@app/repository';
-import { Event } from '../domain/event.entity';
+import { EventDocument } from "@app/repository/entities/mongoose/event.schema";
+import { EventMonitor } from "../domain/event.entity";
 
 /**
- * Translates between the domain aggregate and the TypeORM persistence model.
+ * Translates between the Incident aggregate and the Mongoose document.
  */
 export class EventMapper {
-  static toDomain(orm: EventOrmEntity): Event {
-    return new Event({
-      id: orm.id,
-      source: orm.source,
-      type: orm.type,
-      severity: orm.severity,
-      payload: orm.payload,
-      occurredAt: orm.occurredAt,
+  static toDomain(doc: EventDocument | Record<string, any>): EventMonitor {
+    return new EventMonitor({
+      id: doc._id?.toString(),
+      description: doc.description,
+      eventType: doc.eventType,
+      severity: doc.severity,
+      traceId: doc.traceId,
+      originApplication: doc.originApplication,
+      occurredAt: doc.occurredDateAt
     });
   }
 
-  static toPersistence(event: Event): Partial<EventOrmEntity> {
-    return {
-      id: event.id,
-      source: event.source,
-      type: event.type,
-      severity: event.severity.value,
-      payload: event.payload,
-      occurredAt: event.occurredAt,
-    };
+  static toPersistence(event: Partial<EventMonitor>): Record<string, unknown> {
+    const doc: Record<string, unknown> = {};
+    if (event.description !== undefined) doc.description = event.description;
+    if (event.eventType !== undefined) doc.eventType = event.eventType;
+    if (event.severity !== undefined) doc.severity = event.severity.value;
+    if (event.traceId !== undefined) doc.traceId = event.traceId;
+    if (event.occurredAt !== undefined) doc.occurredDateAt = event.occurredAt;
+    if (event.originApplication !== undefined) doc.originApplication = event.originApplication;
+    return doc;
   }
 }

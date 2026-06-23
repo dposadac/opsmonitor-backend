@@ -1,14 +1,16 @@
-export type IncidentStatus = 'open' | 'investigating' | 'resolved';
-export type IncidentPriority = 'low' | 'medium' | 'high' | 'critical';
+import { IncidentSeverity } from "./value-objects/incident-severity.vo";
+import { IncidentStatus } from "./value-objects/incident-status.vo";
 
 export interface IncidentProps {
   id?: string;
-  title: string;
+  title?: string;
   description?: string;
-  status?: IncidentStatus;
-  priority?: IncidentPriority;
-  relatedEventIds?: string[];
-  resolvedAt?: Date;
+  affected_app?: string;
+  status: string;
+  severity: string;
+  assignee?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 /**
@@ -16,30 +18,25 @@ export interface IncidentProps {
  */
 export class Incident {
   readonly id?: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
+  affected_app?: string;
   status: IncidentStatus;
-  priority: IncidentPriority;
-  relatedEventIds: string[];
-  resolvedAt?: Date;
+  severity: IncidentSeverity;
+  assignee?: string;
+  created_at?: Date;
+  updated_at?: Date;
 
   constructor(props: IncidentProps) {
     if (!props.title) throw new Error('Incident.title is required');
     this.id = props.id;
     this.title = props.title;
-    this.description = props.description ?? '';
-    this.status = props.status ?? 'open';
-    this.priority = props.priority ?? 'medium';
-    this.relatedEventIds = props.relatedEventIds ?? [];
-    this.resolvedAt = props.resolvedAt;
-  }
-
-  /** Domain behavior: transition the incident to resolved. */
-  resolve(): void {
-    if (this.status === 'resolved') {
-      throw new Error('Incident is already resolved');
-    }
-    this.status = 'resolved';
-    this.resolvedAt = new Date();
+    this.affected_app = props.affected_app;
+    this.description = props.description;
+    this.status = IncidentStatus.of(props.status);
+    this.severity = IncidentSeverity.of(props.severity);
+    this.assignee = props.assignee;
+    this.created_at = props.created_at;
+    this.updated_at = props.updated_at;
   }
 }

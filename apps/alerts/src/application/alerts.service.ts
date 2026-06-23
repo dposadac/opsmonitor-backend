@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Alert, AlertChannel } from '../domain/alert.entity';
+import { EventIncidentJobPayload } from '@app/repository';
+import { Alert } from '../domain/alert.entity';
 import { ALERT_REPOSITORY, IAlertRepository } from '../domain/alert.repository';
 
 /**
@@ -12,20 +13,18 @@ export class AlertsService {
     private readonly alertRepository: IAlertRepository,
   ) {}
 
-  async dispatch(input: {
-    incidentId: string;
-    channel: string;
-    message: string;
-  }): Promise<Alert> {
+  /**
+   * Crea y persiste una alerta a partir del payload consumido desde la cola
+   * `event-incident-queue`. La fecha de generación y el estado `pending` los
+   * asigna el agregado de dominio.
+   */
+  async createFromEvent(payload: EventIncidentJobPayload): Promise<Alert> {
     const alert = new Alert({
-      incidentId: input.incidentId,
-      channel: input.channel as AlertChannel,
-      message: input.message,
+      originEvent: payload.eventId,
+      affectedApplication: payload.affectedApplication,
+      severity: payload.severity,
     });
-    // Persist as pending, then simulate the send and update status.
-    const saved = await this.alertRepository.save(alert);
-    saved.markSent();
-    return (await this.alertRepository.update(saved.id as string, saved)) ?? saved;
+    return this.alertRepository.save(alert);
   }
 
   async getById(id: string): Promise<Alert> {
@@ -38,16 +37,6 @@ export class AlertsService {
 
   list(): Promise<Alert[]> {
     return this.alertRepository.findAll();
-  }
-
-  async acknowledge(id: string): Promise<Alert> {
-    const alert = await this.getById(id);
-    alert.acknowledge();
-    const updated = await this.alertRepository.update(id, alert);
-    if (!updated) {
-      throw new NotFoundException(`Alert ${id} not found`);
-    }
-    return updated;
   }
 
   async remove(id: string): Promise<void> {

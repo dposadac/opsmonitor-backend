@@ -1,5 +1,5 @@
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { EventOrmEntity } from '../entities/typeorm/event.orm-entity';
+import { IncidentsOrmEntity } from '../entities/typeorm/incident-entity';
 
 export interface EventQueryFilters {
   source?: string;
@@ -17,9 +17,9 @@ export interface EventQueryFilters {
  */
 export class EventQueryBuilder {
   static build(
-    repository: Repository<EventOrmEntity>,
+    repository: Repository<IncidentsOrmEntity>,
     filters: EventQueryFilters,
-  ): SelectQueryBuilder<EventOrmEntity> {
+  ): SelectQueryBuilder<IncidentsOrmEntity> {
     const qb = repository.createQueryBuilder('event');
 
     if (filters.source) {

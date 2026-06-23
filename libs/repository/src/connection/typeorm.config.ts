@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSourceOptions } from 'typeorm';
-import { EventOrmEntity } from '../entities/typeorm/event.orm-entity';
+import { IncidentsOrmEntity } from '../entities/typeorm/incident-entity';
 
 /**
  * Centralized PostgreSQL connection options + pooling configuration.
@@ -15,7 +15,7 @@ export function buildTypeOrmOptions(config: ConfigService): DataSourceOptions {
     username: config.get<string>('POSTGRES_USER', 'opsmonitor'),
     password: config.get<string>('POSTGRES_PASSWORD', 'opsmonitor'),
     database: config.get<string>('POSTGRES_DB', 'opsmonitor'),
-    entities: [EventOrmEntity],
+    entities: [IncidentsOrmEntity],
     // El esquema se crea con scripts SQL (db/postgres), no con migraciones
     // ni con synchronize.
     synchronize: false,

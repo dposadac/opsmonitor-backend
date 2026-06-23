@@ -1,50 +1,55 @@
-export type AlertChannel = 'email' | 'sms' | 'slack' | 'webhook';
-export type AlertStatus = 'pending' | 'sent' | 'acknowledged' | 'failed';
+export type AlertProcessingStatus = 'pending' | 'in_progress' | 'completed';
+
+export const ALERT_PROCESSING_STATUSES: AlertProcessingStatus[] = [
+  'pending',
+  'in_progress',
+  'completed',
+];
 
 export interface AlertProps {
   id?: string;
-  incidentId: string;
-  channel: AlertChannel;
-  message: string;
-  status?: AlertStatus;
-  createdAt?: Date;
-  sentAt?: Date;
+  originEvent: string;
+  affectedApplication: string;
+  severity: string;
+  generatedAt?: Date;
+  processingStatus?: AlertProcessingStatus;
 }
 
 /**
  * Alert aggregate root for the Alerts bounded context.
+ * Una alerta se genera a partir de un evento consumido desde la cola
+ * `event-incident-queue`. La fecha de generación se asigna al crearse y el
+ * estado de procesamiento arranca en `pending`.
  */
 export class Alert {
   readonly id?: string;
-  readonly incidentId: string;
-  readonly channel: AlertChannel;
-  readonly message: string;
-  status: AlertStatus;
-  readonly createdAt: Date;
-  sentAt?: Date;
+  readonly originEvent: string;
+  readonly affectedApplication: string;
+  readonly severity: string;
+  readonly generatedAt: Date;
+  processingStatus: AlertProcessingStatus;
 
   constructor(props: AlertProps) {
-    if (!props.incidentId) throw new Error('Alert.incidentId is required');
-    if (!props.message) throw new Error('Alert.message is required');
+    if (!props.originEvent) throw new Error('Alert.originEvent is required');
+    if (!props.affectedApplication)
+      throw new Error('Alert.affectedApplication is required');
+    if (!props.severity) throw new Error('Alert.severity is required');
+
     this.id = props.id;
-    this.incidentId = props.incidentId;
-    this.channel = props.channel;
-    this.message = props.message;
-    this.status = props.status ?? 'pending';
-    this.createdAt = props.createdAt ?? new Date();
-    this.sentAt = props.sentAt;
+    this.originEvent = props.originEvent;
+    this.affectedApplication = props.affectedApplication;
+    this.severity = props.severity;
+    this.generatedAt = props.generatedAt ?? new Date();
+    this.processingStatus = props.processingStatus ?? 'pending';
   }
 
-  /** Domain behavior: mark the alert as dispatched. */
-  markSent(): void {
-    this.status = 'sent';
-    this.sentAt = new Date();
+  /** Domain behavior: marca la alerta como en proceso. */
+  markInProgress(): void {
+    this.processingStatus = 'in_progress';
   }
 
-  acknowledge(): void {
-    if (this.status !== 'sent') {
-      throw new Error('Only sent alerts can be acknowledged');
-    }
-    this.status = 'acknowledged';
+  /** Domain behavior: marca la alerta como completada. */
+  markCompleted(): void {
+    this.processingStatus = 'completed';
   }
 }

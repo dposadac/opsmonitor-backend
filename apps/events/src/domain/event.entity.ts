@@ -1,40 +1,39 @@
 import { EventSeverity } from './value-objects/event-severity.vo';
+import { EventTraceId } from './value-objects/event-traceid.vo';
 
 export interface EventProps {
   id?: string;
-  source: string;
-  type: string;
+  originApplication:string;
+  eventType: string;
+  description: string;
   severity: string;
-  payload?: Record<string, unknown>;
-  occurredAt?: Date;
+  traceId?: string;
+  occurredAt?: string;
 }
 
 /**
  * Event aggregate root — the domain model for the Events bounded context.
  * Independent from any persistence concern.
  */
-export class Event {
+export class EventMonitor {
   readonly id?: string;
-  readonly source: string;
-  readonly type: string;
-  readonly severity: EventSeverity;
-  readonly payload: Record<string, unknown>;
-  readonly occurredAt: Date;
+  eventType: string;
+  originApplication:string;
+  description: string;
+  severity: EventSeverity;
+  traceId: string;
+  occurredAt?: string;
 
   constructor(props: EventProps) {
-    if (!props.source) throw new Error('Event.source is required');
-    if (!props.type) throw new Error('Event.type is required');
+    if (!props.eventType) throw new Error('Event.source is required');
+    if (!props.severity) throw new Error('Event.type is required');
 
     this.id = props.id;
-    this.source = props.source;
-    this.type = props.type;
+    this.eventType = props.eventType;
+    this.originApplication = props.originApplication;
+    this.description = props.description;
     this.severity = EventSeverity.of(props.severity);
-    this.payload = props.payload ?? {};
-    this.occurredAt = props.occurredAt ?? new Date();
-  }
-
-  /** Business rule example: should this event escalate into an incident? */
-  shouldEscalate(): boolean {
-    return this.severity.isCritical();
+    this.traceId = props.traceId ? EventTraceId.of(props.traceId).value : EventTraceId.next().value;
+    this.occurredAt = props.occurredAt;
   }
 }
